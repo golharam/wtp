@@ -1,0 +1,21 @@
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=1 Z=1000 P="0001111110000111111" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="1110001110111000111" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="1111110000111111000" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="0010110111001011011" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="0011011011001101101" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="0011101101001110110" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="1100011101110001110" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="1101100011110110001" M=0  > out1184004691
+#/home/apg/zhangzh/readsmap/map testreads1 genome2 T=20 L=19 C=1 E=out11184004691 F=0 B=1 D=1 r=0 n=0 Z=1000 P="1110010011111001001" M=0  > out1184004691
+>testread,21.0,0.2
+T32110110001322310132
+>read,-40.1
+T32310132231000110112
+>testread2,21.2
+T32110110001322310123
+>testread3,21.2,0.2
+T32110110121322310132
+>testread4,21.2
+T10110110001322310132
+>testread5,21.2
+T11110110001322310132

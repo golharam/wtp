@@ -1,0 +1,211 @@
+<project name="whole_transcriptome" basedir="." default="compile">
+
+	<!--
+	
+	Building customer releases checklist:
+	
+	1. Be sure the version property is properly set in build.xml.
+
+	2.  Execute the dist target to build the app tarball.
+	
+	3. Execute the dist.test target to build the test tarball.
+	
+	4. Update the Documentation.
+	
+	5. Test with small test set (100k reads on truncated human reference in test dir)
+		Test on both pbs and lsf.
+	    
+	6. Test with large test set (4M reads reads on full human reference).
+		Test on pbs only.
+		
+	7. Be sure all changes are checked into SVN.
+		
+	8. Post updated Docs, test data and tarball to solidsoftwaretools.com.
+	
+	-->
+	<property name="app.name" value="Whole Transcriptome Alignment Module" />
+	<property name="version" value="1.2.1" />
+	<property name="src.dir" value="src" />
+	<property name="class.dir" value="classes" />
+	<property name="dev.bin.dir" value="devbin" />
+	<property name="lib.dir" value="lib" />
+	<property name="pkg.dir" value="pkg" />
+	<property name="doc.dir" value="doc" />
+	<property name="etc.dir" value="etc" />
+	<property name="test.dir" value="test" />
+	<property name="data.dir" value="data" />
+	<property name="build.dir" value="build" />
+	<property name="svn.revision" value="unknown" />
+
+	<property name="jar" value="pkg/WholeTranscriptome.jar"/>
+
+	<property name="dist.name" value="ab_wtp_v${version}" />
+	<property name="tarfile" value="${dist.name}.tar" />
+	<property name="tarball" value="${build.dir}/${dist.name}.tar.gz" />
+	<property name="dist.test.name" value="${dist.name}_testData" />
+	<property name="test.tarfile" value="${dist.test.name}.tar" />
+	<property name="test.tarball" value="${build.dir}/${dist.test.name}.tar.gz" />
+	
+	<property name="data.human.src" value="${data.dir}/human_reference" />
+	<property name="dist.human.data.name" value="${dist.name}_human_reference" />
+	<property name="data.human.tarfile" value="${build.dir}/${dist.human.data.name}.tar" />
+	<property name="data.human.tarball" value="${build.dir}/${dist.human.data.name}.tgz" />
+
+	<path id="classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<target name="init" >
+		
+		<echo message="BUILDING ${app.name} version ${version}."/>
+		
+		<chmod file="${pkg.dir}/mapreads" 	perm="755" />
+		<chmod file="${pkg.dir}/map" 	perm="755" />
+		<chmod file="${pkg.dir}/remduphits" 	perm="755" />
+		<chmod file="${pkg.dir}/extendMappedReads.py" 	perm="755" />
+		<chmod file="${pkg.dir}/altSplicing.py" 	perm="755" />
+		<chmod file="${pkg.dir}/stackReads.py" 	perm="755" />
+		<chmod file="${pkg.dir}/alignReads.py" 	perm="755" />
+		<chmod file="${pkg.dir}/searchBits.py" 	perm="755" />
+
+		<tstamp> 
+			<format property="build.date" pattern="MM/dd/yyyy"/>
+		</tstamp>
+		
+		<!-- Uncomment the following to include the svn revision number with the build -->
+		<!--Requires installation of svnAnt and required jar files -->
+		<!--
+		<svn>
+			<status 
+			  	textStatusProperty="svn.textStatus"
+			  	propStatusProperty="svn.propStatus"
+			  	revisionProperty="svn.revision"
+			    lastchangedrevisionproperty="svn.lastChangedRevision"
+			  	lastcommitauthorproperty="svn.lastCommitAuthor"
+			  	urlproperty="svn.url"
+			    path="" />
+		</svn>
+		
+		
+		<echo message="SVN Text Status   ${svn.textStatus}" />
+		<echo message="SVN Prop Status   ${svn.propStatus}" />
+		<echo message="SVN Revision         ${svn.revision}" />
+		<echo message="SVN LastChanged ${svn.lastChangedRevision}"/>
+		<echo message="SVN LastChanged ${svn.lastCommitAuthor}"/>
+		<echo message="SVN URL ${svn.url}"/>
+		<echo message="_________________________________________" />
+		-->
+		
+		<echo message="*****  DID YOU REMEMBER TO UPDATE THE VERSION NUMBER? *******" level="warning"/>
+
+	</target>
+
+	<target name="compile" depends="init">
+		<!-- forcing a complete recompile to avoid some problems I was having with -->
+		<!-- class files from the Eclipse JDT compiler with the Java runtime on siena. -->
+		<delete dir="${class.dir}"/>
+		<mkdir dir="${class.dir}"/>
+		<javac destdir="${class.dir}" classpathref="classpath" debug="true">
+			<src path="${src.dir}" />
+			<exclude name="mayo/*"/>
+		</javac>
+		<copy todir="${class.dir}" overwrite="true">
+			<fileset dir="${src.dir}" excludes="**/*.java" includes="**/*.properties" />
+			<filterset>
+				<filter token="APPLICATIONNAME" value="${app.name}" />
+				<filter token="BUILDDATE" value="${build.date}" />
+				<filter token="SVNBUILDNUM" value="${svn.revision}" />
+				<filter token="VERSION" value="${version}" />
+			</filterset>
+		</copy>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="${jar}" basedir="${class.dir}" excludes="mayo/**">
+			<manifest>
+				<attribute name="Class-Path" value="../lib/iText-2.1.3.jar ../lib/jcommon-1.0.13.jar ../lib/jfreechart-1.0.10.jar" />
+				<attribute name="Created-By" value="apache-ant" />
+				<attribute name="Main-Class" value="com.lifetechnologies.solid.wt.WholeTranscriptomeAnalyzer" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="dist" depends="jar" >
+		<mkdir dir="${build.dir}" />
+		<delete file="${tarfile}" />
+		<delete file="${tarball}" />
+		<tar destfile="${tarfile}"  >
+			<tarfileset dir="." mode="755" prefix="${dist.name}">
+				<include name="bin/split_read_mapper.sh" />
+				<include name="bin/count_tags.pl" />
+				<include name="bin/ntr_finder.sh"/>
+				<include name="bin/refgene2gff.sh"/>
+				<include name="${pkg.dir}/map"/>
+				<include name="${pkg.dir}/mapreads"/>
+				<include name="${pkg.dir}/remduphits"/>
+				<include name="${pkg.dir}/extendMappedReads.py" />
+				<include name="${pkg.dir}/altSplicing.py" />
+				<include name="${pkg.dir}/stackReads.py" />
+				<include name="${pkg.dir}/alignReads.py" />
+				<include name="${pkg.dir}/searchBits.py"/>
+			</tarfileset>
+			<tarfileset dir="." prefix="${dist.name}" >
+				<include name="build.xml"/>
+				<include name="Makefile"/>
+				<include name="README"/>
+				<include name="RELEASE_NOTES"/>
+				<include name="${src.dir}/**" />
+				<include name="${lib.dir}/**" />
+				<include name="${pkg.dir}/**" />
+				<include name="${etc.dir}/**"/>
+				<include name="readsmap/**" />
+				<exclude name="${dev.bin.dir}/**" />
+				<exclude name="${data.dir}/**"/>
+				<exclude name="${src.dir}/mayo/**" />
+				<exclude name="bin/split_read_mapper.sh" />
+				<exclude name="bin/count_tags.pl" />
+				<exclude name="bin/ntr_finder.sh" />
+				<exclude name="${pkg.dir}/map"/>
+				<exclude name="${pkg.dir}/mapreads"/>
+				<exclude name="${pkg.dir}/remduphits"/>
+				<exclude name="${pkg.dir}/extendMappedReads.py" />
+				<exclude name="${pkg.dir}/altSplicing.py" />
+				<exclude name="${pkg.dir}/stackReads.py" />
+				<exclude name="${pkg.dir}/alignReads.py" />
+				<exclude name="${pkg.dir}/searchBits.py"/>
+				<exclude name="${doc.dir}/*.doc" />
+			</tarfileset>
+		</tar>
+		<gzip src="${tarfile}" destfile="${tarball}" />
+		<delete file="${tarfile}" />
+	</target>
+
+	<target name="dist_test" >
+		<delete file="${test.tarfile}"></delete>
+		<delete file="${test.tarball}"></delete>
+		<tar destfile="${test.tarfile}" >
+			<tarfileset dir="${test.dir}" prefix="${dist.test.name}" />
+	    </tar>
+		<gzip src="${test.tarfile}" destfile="${test.tarball}" />
+		<delete file="${test.tarfile}" />
+	</target>
+	
+	<target name="dist_human_data_files" >
+		<delete file="${data.human.tarball}}"></delete>
+		<delete file="${data.human.tarfile}"></delete>
+		<tar destfile="${data.human.tarfile}" >
+			<tarfileset dir="${data.human.src}" prefix="${dist.human.data.name}" />
+	    </tar>
+		<gzip src="${data.human.tarfile}" destfile="${data.human.tarball}" />
+		<delete file="${data.human.tarfile}" />
+	</target>
+	
+	<target name="update_mapreads" >
+		<exec executable="rsync">
+			<arg line="-Cr  ${mapreads.build.dir} readsmap"/>
+		</exec>
+	</target>
+
+</project>

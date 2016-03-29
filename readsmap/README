@@ -1,0 +1,137 @@
+	Mapping package
+
+Introduction
+  
+  The purpose of the code is to map lots of short reads to a long sequence 
+quickly.
+
+  There are two programs in the main package. The program map is the lower 
+level core engine that does the mapping. The program mapreads is the wrapper 
+around map that use multiple discontiguous word pattern to achieve desirable 
+number of mismatches. It also deal with both sequence space and color space 
+mapping.
+
+
+Command line options:
+
+------------------------ 
+
+mapreads (0.2) utility program
+USAGE:  mapreads readsC seqfile [options]
+
+OPTIONS:
+	M=##    Number of mismatches allowed (default 0)
+	P=str   Path whether to find program map (Def ~/bin)
+	S=##    0 color space, 1 seq space, 2 both, 3 analyze seqs in color, 4 ana in seq space
+	F=0/1   Wether to filter reads progressively when hits are found
+	L=##    length of reads (Def 15)
+        X=str   matrix file (default empty)
+        C=0/1   clean up temp file or not (default 1)
+        T=str   template file (default empty)
+
+Here the program can take in read file in color space, a sequence file in 
+sequence space. Both are in fasta format. The reads file list each read as
+1 nucleotide followed by L color codes. The program will call map program 
+to map the right reads to the reference sequence. It can search in color and/or
+sequence space. In both sequence and color space search, both strand will be
+searched. The program automatically generate the right discotiguous word 
+patterns to use to gurantee the correct number of mismatches. If F is set to 1,
+the program only guarantees, for each read, to generate one of the hits with 
+the lowest number of mismatches. In multiple pass with discontiguous word, 
+it will not process that read once a hit is found, which may provide speed up.
+
+The program allows user to provide a matrix file to be used by map program. Also
+user can specify a template file instead of using the templates provided by
+the program.
+
+The program can also map two sequences (or one sequence against itself). If 
+S is set to 3 or 4, readsC will be a single sequence (may be the same as 
+seqfile), the program will map each L-base read from readsC to seqfile. This is
+useful to analyze the reference sequence to see how hard is to resequence it,
+and where in the reference sequence, is the sequencing the hardest.
+
+-----------------------------------
+
+map (0.1) utility program
+USAGE:  map readsfile seqfile [options]
+
+OPTIONS:
+	T=##     Threshold Score
+	A=0/1   whether output alignment (default 0)
+	X=file  this gives the input matrix file
+	G=#     this gives the maximum number of indel bases allowed (default 0)
+	P=str   discontig word pattern(default11111111)
+	L=##    lenght of reads(dafault 15)
+	E=file  Intermediate outfile, add the hits to it
+	F=0/1   Wether to filter reads that already have hits in E-file
+	C=0/1   Whether it is in color space
+	B=0/1   Whether to search for both direction 
+	M=0/1   Default 0=mapping reads, 1=compare two sequences (maybe 1) at length L
+
+The program map takes two fasta files, one for reference sequence, one for 
+reads, and map the reads to the referernce sequence. All reads are assumed to
+be the same length (given by parameter L). 
+
+When M is set to 1, the readsfile is a sequence file (could be the same as
+seqfile). The program generates reads from readsfile for every L-base 
+substring and map it to the seqfile. 
+
+Note: the program can search both in color space and sequence space. In the 
+search of color space, the in readsfile, each read is represented by one 
+nucleotide followed by L color codes. In sequence space search, read file must
+list reads in sequence bases.
+
+Also, when mapping in color space, L is defined as 1 less than the read length,
+since the first color code is not used in mapping (although the first base with
+first color code together decide 1 base which is used in matching).
+
++++++++++++++++++++++++++++
+
+Some other supporting programs:
+
+
+radsort seadsfile numPass
+
+This will sort the readsfile using radix sort on the id of the reads. It use
+the first two fields of the id to do radix sort. Each pass use 32 bins. For 
+our reads, numPass needed to set at 5, since the 2nd field has 11 bits and the
+first field can be up to 12 bits. Totol of 23 bits need 5 passes of 5 bits. 
+
+This program is useful to make paired reads in the same order in two reads
+files. 
+
+--------------------
+
+pairing file1 file2 lower upper
+
+The program take two input files that are the output of mapping of forward and
+reversed reads, and output all pairs of reads that are within distance between
+lower and upper. 
+
+
+---------------------
+
+seqstat file seqlen readlen
+
+This program is a proprocessing for mapreads running on two sequences. It use
+the output of mapreads to analyze how hard sequencing is at each position of
+the reference sequence. First of all, it calculate the average numbers of 
+perfect matches, matches with 1 mismatch, 2-mismatch, etc for a read of length
+L. Let A0, A1, A2, etc be the average numbers.
+
+Let N0, N1, N2, .. be the number of perfect matches, with 1,2.. mismatches for
+a given position. We calculate a number 
+X(p)=N0/A0+N1/A1+N2/A2...
+to be the degree of difficulty for this position. Obviously the larger the 
+number the more hits to the positions, and the harder to sequence it is.
+
+--------------------------
+
+makepattern  pat templatefile numMis outMatrix outTemplate
+
+This program use a template database in file templatefile, and from the pattern
+pat, it build a matrix file that do not penalize mismatch at masked bases. Also
+it provide a template output file that include a list of dicontiguous patterns
+that ignore masked bases. If length of reads is L, and number of masked bases
+is n, the effective length of reads is L-n, we will search the template database
+for length L-n and numMis, and then fill zeros at the masked positions.  

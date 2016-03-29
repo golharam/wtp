@@ -1,0 +1,19 @@
+cp $1/map.cxx src
+cp $1/mapreads.cxx src
+cp $1/map.h src
+cp $1/remduphits.cxx src
+cp $1/zutil.cxx src
+cp $1/zutil.h src
+cp $1/util.cxx src
+cp $1/util.h src
+cp $1/mapmain.cxx src
+cp $1/fasta-io.cxx src
+cp $1/fasta-io.h src
+cp $1/zcompress.h src
+cp $1/zcompress.cxx src
+cp $1/../Makefile_release Makefile 
+cp $1/rescue.cxx $1/pairing.cxx $1/rescue.h src
+cp $1/merge_map.cxx $1/radsort.cxx $1/getComp.h $1/getComp.cxx src
+cp $1/../schemas/* schemas
+tar czf source.tar.gz Makefile src
+tar czf schemas.tar.gz schemas

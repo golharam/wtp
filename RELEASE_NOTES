@@ -1,0 +1,95 @@
+AB WT Analysis Pipeline 1.2 Release notes.
+
+Release 1.2.1
+
+	Fixes a bug in count_tags.pl where counts were doubled when 
+	-read_alignment_type is set to 'top_score'
+	
+	Fixes a bug in split_read_mapper.sh where filtered reads were reported
+	in the gff file.
+	
+	Fixing a problem in split_read_mapper.sh where insufficient memory
+	is requested for scheduled jobs.
+	
+	Fixes a problem in split_read_mapper.sh where determination of unique
+	reads is done differently for .max and .gff results.
+	
+	Fixes a problem in split_read_mapper.sh where references with a large
+	number of sequence entries cause failure with the message 'Too many open
+	Files' during the Reference Partitioning step.
+	
+	Adding default 'queue.sys.resource.string' to etc/config.ini for LSF and 
+	SGE schedulers.
+
+Release 1.2
+
+   Split read mapping algorithm can place reads across known and putative 
+   splice junctions
+   
+   Exon boundaries provided by GTF input file
+
+   split_read_mapper.sh now uses the cascading configuration files implemented
+   in ntr_finder.sh
+   
+   In extension, a valid adjacent mismatch now lowers the score by 2.  In prior
+   releases a valid adjacent mismatch lowers the score by 1.
+
+Release 1.1
+
+   Fixes a problem in schema_26_2_adj and possibly other schemas.  These 
+   problems resulted in missing mappings in version 1.0.
+
+   Sun Grid Engine (SGE) is now a supported as a scheduler.
+
+   Added bin/ntr_finder.sh, a tool for identifying novel transcribed regions.
+
+   Many new schemas added to etc/schemas.  These new schemas feature 
+   additional mapping configurations or improved performance over schemas 
+   in release 1.0.
+
+   Shebang(#!) Line in python scripts is no longer used.  Python is now 
+   called directly.
+
+   Fixes some bugs in mapping where reads were not properly mapped to 
+   reference containing IUB codes.
+
+   count_tags.pl sets the name field in individual chromosome wig files, 
+   allowing loading multiple files in UCSC browser.
+
+   Fixes a problem in count_tags.pl where reference sequence description 
+   lines containing whitespace caused no counts to be reported.
+
+   Fixes a problem in the gff output of count_tags.pl where the strand and phase
+   columns were swapped.  Column 7 is now strand and Column 8 is now phase.
+
+Release 1.0  
+
+   Initial Release
+
+Known Issues
+
+   count_tags.pl will fail if reference has more than 50 sequence entry, 
+   and is_sorted = no and -split_by_chromosome = yes.  
+
+
+   Mapping with MATCHES_TO_IUPACS_VALID_FOR_MAPPING_AND_EXTENSION is not 
+   guaranteed to report zero mismatches for a read mapped to a perfectly 
+   aligning reference containing IUB codes.  This feature is under development.
+
+   Mapping tasks will fail if user specifies a mapping configuration for 
+   which there is no corresponding schema file in etc/schemas.  Is this case, 
+   the user will receive an error like: �Schema file schema_##_# could not be 
+   found.�  Missing schemas may be available through support.
+
+   Job monitoring requires $PS4 to be '+'.  When checking for successful 
+   completion of jobs, the program looks for a line starting with '+ RETVAL=1"  
+   However, the '+' part of this is set by the $PS4 environment variable.  
+   If $PS4 is not �+�, the program will fail.
+
+   Repeating a run of the pipeline will fail with a different setting for
+   VALID_ADJACENT_MISMATCHES_COUNT_AS_ONE_FOR_MAPPING_AND_EXTENSION. You 
+   must manually remove the max files from 
+   <FOLDER_FOR_OUTPUT_FILES>/tmp/mappingAndExtension/reads_*/ref_*/
+
+
+

@@ -1,0 +1,33 @@
+AB WT Analysis Pipeline
+
+Installation:
+
+1.	Unzip the contents of the package into the directory where you want to 
+    install the package.
+2.	From the root install directory, enter the following to build the mapping 
+    software:
+	% make
+
+    
+3.	The pipeline is now ready for use.
+
+4. OPTIONAL:  Add <installation_dir>/bin to your $PATH environment variable.
+
+
+Mapping with the pipeline:
+
+	bin/split_read_mapper.sh	<config file*>
+	
+	*An example config file is available in doc/
+	
+Generating counts:
+	
+	bin/count_tags.pl
+
+Finding Novel transcribed regions
+
+	bin/ntr_finder.sh [-c file*]
+	
+	*An example is is doc/
+	
+

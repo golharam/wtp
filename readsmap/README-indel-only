@@ -1,0 +1,254 @@
+SOLiD Indel Finding code
+(c) 2008 by Applied Biosystems
+Software under NDA and not to be redistributed
+
+Date:  April 17, 2008
+
+************
+Requirements
+************
+Tested under 64-bit (x86-64) Centos 4 and 5, but will most likely will work with other
+64-bit Linux's.
+
+Other than a 64-bit c++ complier (i.e. g++), BASH, and PERL, there should be no other
+software requirements.  Centos 4 has g++ version 3.4.6 and perl version 5.8.5 while
+Centos 5 has versions 4.1.2, 5.8.8, respectively.
+
+************
+Installation
+************
+1. tar -zxvf release_indel.tar
+(Recomend to do this from $HOME directory.)
+
+2. cd release_indel
+3. make
+   (Note 'make install' not currently working with scripts.)
+
+4. Add to your path these directories:
+release_indel and release_indel/scripts
+
+For example, if you placed release_indel into your home directory, add to .bash_profile:
+PATH=$HOME/release_indel:$HOME/release_indel/scripts:$PATH
+export PATH
+
+Note, if you install to a location other than $HOME/release_indel, then you will 
+have to modify progDir variable in findSmallIndels.sh.
+
+**************
+Indel Pipeline
+**************
+doAll-findSmallIndels.pl calls findSmallIndels.sh which runs this pipeline.
+
+Match Files for R3/F3
+Pairing Files from Pairing analysis
+Reference Genome
+     |
+     | pairing (indel finding mode)
+     |
+     v           mpindel_parse      sort          mpindel_summ(.pl)
+pairing-w-indels.res ----> indel.pas ---> indel.sort ---> indel.#.sum
++ R3/F3 read lengths                    + max. # align
+                                           to display
+***************
+Required Inputs
+***************
+1. From secondary matching (alignment) pipeline results.
+
+[RUN-NAME]_[SAMPLE-NAME]_R3.all_chromosomes.csfasta.ma.[READ-LENGTH].[NUM-MISMATCHES]
+[RUN-NAME]_[SAMPLE-NAME]_F3.all_chromosomes.csfasta.ma.[READ-LENGTH].[NUM-MISMATCHES]
+i.e.  BARB_20051114_1_MySample-01_F3.all_chromosomes.csfasta.ma.25.2
+
+These should be in /data/results/[RUN-NAME]/[SAMPLE-NAME]/[RESULTS-DIR]/[R3-SECOND-DIR]
+and /data/results/[RUN-NAME]/[SAMPLE-NAME]/[RESULTS-DIR]/[F3-SECOND-DIR]
+
+i.e. /data/results/BARB_20051114_1/MySample-01/results.01/secondary.m2_25_2_R3 secondary.m4_25_2_F3 pairing.m2 200 1000 127 25.2
+
+Note, /data/results directory can be specified as another directory.
+
+
+2. From secondary pairing pipeline results.
+
+pairing.dat.1 to pairing.dat.[max-number]
+located at /data/results/[RUN-NAME]/[SAMPLE-NAME]/[RESULTS-DIR]/[PAIRING-DIR]/
+    pairing_[MIN-CLONE-LENGTH]_[MAX-CLONE-LENGH]
+i.e. /data/results/BARB_20051114_1/MySample-01/results.01/pairing.m2/pairing_200_1000
+
+Again, /data/results can be something else, but it needs to be the same as #1.
+
+
+3. Run information file.
+
+This is a file under the release_indel/run-info directory.  The format of this file is
+
+[RUN-NAME] [SAMPLE-NAME] [RESULTS-DIR] [R3-SECOND-DIR] [F3-SECOND-DIR] [PAIRING-DIR]
+    [MIN-CLONE-LENGTH] [MAX-CLONE-LENGH] [MAX-pairing.dat-NUMBER] [READ_LENGTH.#MISMATCHES]
+
+This needs to be all one line, and space separated. [READ_LENGTH.#MISMATCHES] can be
+specified as a single read_length.num_mismatches or as a pair, i.e 35.3-30.3, where the
+former is for R3 and the later, F3.
+
+Examples:
+BARB_20051114_1 MySample-01 results.01 secondary.m2_25_2_R3 secondary.m4_25_2_F3 pairing.m2 200 1000 127 25.2
+Florence_20060201_1 MySample-02 results.01 secondary.m18_R3 secondary.m20_F3 pairing.m5 1000 2000 253 35.3-30.3
+
+**********
+Usage
+**********
+****
+For each individual run:
+****
+doAll-findSmallIndels.pl --runPBS|--runHere|--runHereMP [options]
+
+Runs the small indel pipeline for several runs specified in a run information
+file (runInfoFn).
+
+One run method required:
+'runHere' => 'Performs action on local server',
+'runHereMP' => 'Works on all runs on local server simultaneously',
+'runPBS' => 'Submits jobs (1 per run) via qsub',
+'runLSF' => 'Submits jobs (1 per run) via lsf [not implemented]',
+   (PERL script needs to be modified to do correct bsub command).
+
+Options:
+'runInfoFn' => 'Filename that contains run information',
+'runLines-to-do' => 'Only uses these line numbers of runInfoFn',
+'skip-pairing' => 'Skip pairing procedure',
+'path' => 'Path where indel results will be written to',
+   [i.e. /home/userid/indel-results.run-set-01]
+'secondary-path' => 'Path where secondary results will be read from',
+   [i.e. /data/results]
+'pairingParms' => "Pairing parameters separated by commas (no spaces)
+   (Format: G=2,T=2,I=3,D=10,i=7,d=7,P=1,z=10)
+   G=2,gap alignment for indel finding
+   I/D, max. size for Insertion/Deletions,
+   T, max. number of mismatches,
+   i/d, min. number of bases on each side where ins/del generally cannot be present
+   z, total number of hits in the genome to consider when looking for indels,
+   P=1, input file format (leave as this script will automatically use this format)",
+'refGenome' => 'Ref. genome file (fasta format)',
+   [i.e. /share/reference/genomes/chromFa/human.fa]
+'scratchDir' => 'Scratch directory',
+'comments' => 'comments for README file'
+
+Sample:
+doAll-findSmallIndels.pl --scratchDir $HOME --path $HOME/indel-test-res --pairingParms G=2,D=10,T=2,I=3,i=6,d=6,P=1,z=30 --refGenome /share/reference/genomes/chromFa/human.fa --runHereMP --comments "Test Run" --runInfoFn $HOME/release_indel/run-info/indel-try4.1.txt
+
+Default options are defined near the beginning of the script, and these can be
+modified for greater convenience.
+
+****
+To Combine runs
+****
+indel-combRuns.pl --run
+
+Options:
+'path' => 'Specifies base path',
+'runInfoFn' => 'Filename that contains run information',
+'runLines-to-do' => 'Lines in runInfoFn that will be combined together',
+'dbsnpfn' => "Specifies indel list for comparison. Must be sorted by chrom then by
+              position.",
+'numAlignToShow' => "Specifies number of aligns to show.",
+'useNewSum' => "combines indels together more liberally using mpindel-sum.pl",
+'conservativeGrouping' => "For useNewSum option, use 5bp grouping instead of 15+bp"
+
+Combines the results of several runs together to form a single indel candidate list.
+
+Sample:
+combineIndelRuns.pl --useNewSum --run --path $HOME/indel-test-res --runInfoFn $HOME/release_indel/run-info/indel-try4.1.txt
+
+****
+To pull read sequences for .sort file
+****
+getseq-forIndelsRes.pl --run
+
+Sample:
+getseq-forIndelsRes.pl --useNewSum --run --path $HOME/indel-test-res --runInfoFn $HOME/release_indel/run-info/indel-try4.1.txt --runLines-to-do 3,4
+
+
+************
+Output files
+************
+In the directory specified by --path in doAll-findSmallIndels.pl you'll find several
+directories:
+[RUN-NAME_1 DIR] [RUN-NAME_2 DIR] . . . [RUN-NAME_end DIR]
+[COMB-RUN-NAME DIR]
+outputs
+
+In outputs, there's a README and LOG file.  README will show the basic settings used.
+LOG has more details, and depending on how you run it, you'll see several other files
+which contain the progress of each individual run.
+
+The results are contained in the [RUN-NAME DIR]/indels subdirectory.
+
+*******************
+Output file formats
+*******************
+In the indels directory, the files all start with indel-[RUN_NAME], but have several
+extensions:
+****
+.res  Raw Pairing results with indel rescue.
+****
+>1_13_889_R3
+No pairing found.
+
+>1_13_1149_R3,4_99509978.1=4_99511587.1
+Pairing found.
+
+>1_13_1240_R3,1_-152622669.24.1|1_-152621376.0
+Pairing found in rescue.
+
+>3_592_1860_R3,5_149448267.26.2(7,7_17)|5_149450173.0
+Pairing found with indel rescue.
+
+****
+.pas/.sort  Found indels
+****
+Sample column:
+94531614355     -10     2       >178_146_317_R3,22_42333106.0|22_42333826.34.2(17,17_17)
+columns:
+1. Chromosome position = chrNum * 2^32 + chrPos
+   chrNum 23 = X, 24 = Y, 25 = M
+2. Indel size.  Negative is deletion, positive insertion.
+3. Number of mismatches
+4. Read alignment/indel information (See below for description)
+
+****
+.#.sum  Indels aggregated by position
+****
+The # in the filename is the minimum number of unique supports.  In the filename, indel-[RUN_NAME].2.sum, means there are 2 or higher unique supports
+
+Sample column:
+1:1222057-1222059       2(2)    -8--8   >1317_280_1225_R3,1_1221458.0|1_1222050.32.1(7,7_8)     >2110_1840_1344_R3,1_-1222083.32.0(16,16_17)|1_-1221196.1
+
+columns:
+1. Chr:position-pos_add_2
+2. Number unique supports (number of alignments)
+  * Alignments are considered unique if alignments either the R3 position and F3
+    positions are different.  Only if they are both the same are they considered
+    non-unique.
+  Note, with the alignments, you can use your own definition of uniqueness.  One
+    suggested definition is consider unique R3 and F3 position that are the same,
+    but come from different samples.
+3. Indel length range, -8--6, means that there are deletions of length 6 to 8.
+4. (and above) The alignments, one per column.  Up to 30 displayed.  In the brief
+    subdirectory, only 1 will be displayed.  In the combined run, the number
+    displayed is settable.
+
+***************************
+Alignment/Indel information
+***************************
+General format:
+>[BEAD-ID]_F3,R3-Hit|F3-Hit          in each run -or-
+>[BEAD-ID]_[RunName],R3-Hit|F3-Hit   in a combined run.
+
+R/F3 hit:
+ChrNum_ChromPos.NumMisMatches -or-
+ChrNum_ChromPos.MatchLengh.NumMismatches(IndelPosInRead,low_high)
+i.e. 1_-2550572.1 or 1_-2551141.27.1(14,13_17)
+
+Indel Size = -1 + ReadLength - Match Length
+(Negative is a deletion, positive is an insertion)
+
+Examples:
+>1963_561_829_R3,1_-2551141.27.1(14,13_17)|1_-2550572.1
+>1317_280_1225_R3,1_1221458.0|1_1222050.32.1(7,7_8)
